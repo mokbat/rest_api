@@ -88,7 +88,7 @@ class MoviesRestApi(unittest.TestCase):
         # Assert if lists are equal
         self.assertListEqual(unique_poster_path_list, \
         poster_path_list, msg="Both lists don't match")
-        
+
     def test_poster_url_validation(self):
         """
         Requirements:
@@ -99,8 +99,6 @@ class MoviesRestApi(unittest.TestCase):
         2. poster_path key can be None/Null
         """
         # Poster path list variable
-        poster_path_list = []
-
         validate = url()
 
         # Iterate through each of the movie dict in the result list
