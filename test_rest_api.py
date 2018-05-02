@@ -13,6 +13,10 @@ and additional requirements.
 import unittest
 import requests
 
+# Python Addon Libraries
+from django.core.validators import URLValidator as url
+from django.core.exceptions import ValidationError
+
 class MoviesRestApi(unittest.TestCase):
     """
     MovieRestApi module is based on Unittest.
@@ -84,6 +88,36 @@ class MoviesRestApi(unittest.TestCase):
         # Assert if lists are equal
         self.assertListEqual(unique_poster_path_list, \
         poster_path_list, msg="Both lists don't match")
+        
+    def test_poster_url_validation(self):
+        """
+        Requirements:
+        SPL-002: All poster_path links must be valid. poster_path link of null is also acceptable
+
+        Assumptions:
+        1. poster_path key can be absent
+        2. poster_path key can be None/Null
+        """
+        # Poster path list variable
+        poster_path_list = []
+
+        validate = url()
+
+        # Iterate through each of the movie dict in the result list
+        for each_movie in self.results:
+            # Use sub test to differentiate failures
+            with self.subTest(each_movie["title"]):
+                try:
+                    validate(each_movie["poster_path"])
+                except ValidationError:
+                    self.fail(msg="Url Validation Failed for movie title \"" + \
+                    each_movie["title"] + "\" with url \"" + each_movie["poster_path"] + "\"")
+                except KeyError:
+                    # No poster_path is acceptable
+                    pass
+                except AttributeError:
+                    # Assuming poster path of null is acceptable
+                    pass
 
 if __name__ == "__main__":
     unittest.main()
