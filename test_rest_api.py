@@ -17,6 +17,9 @@ import requests
 from django.core.validators import URLValidator as url
 from django.core.exceptions import ValidationError
 
+# Rest API Custom Libraries
+from rest_api_functions import is_string_palindrome as check_palindrome
+
 class MoviesRestApi(unittest.TestCase):
     """
     MovieRestApi module is based on Unittest.
@@ -40,6 +43,10 @@ class MoviesRestApi(unittest.TestCase):
         self.headers = {"Accept" : "application/json"}
         self.output = requests.get(url=self.url, headers=self.headers)
         self.results = self.output.json()["results"]
+
+        # This would enable to check the entire diff
+        # between attribute comparisons
+        self.maxDiff = None # pylint: disable=C0103
 
     def tearDown(self):
         """
@@ -116,6 +123,58 @@ class MoviesRestApi(unittest.TestCase):
                 except AttributeError:
                     # Assuming poster path of null is acceptable
                     pass
+
+    def test_genre_ids_sum(self):
+        """
+        Requirements:
+        SPL-004: The number of movies whose sum of "genre_ids" > 400 should be no more than 7.
+                 Another way of saying this is: there at most 7 movies such that
+                 their sum of genre_ids is great than 400
+        """
+        # Declare a variable to store the number of movies
+        # greater than 400
+        movies_above_genre_ids_400 = 0
+
+        # Iterate through each of the movie dict in the result list
+        for each_movie in self.results:
+            # Declare variable to store the sum of genre ids
+            sum_of_genre_ids = 0
+
+            # Add all genre ids for a movie
+            for genre_id in each_movie["genre_ids"]:
+                sum_of_genre_ids += genre_id
+
+            # Check if it above 400
+            if sum_of_genre_ids > 400:
+                movies_above_genre_ids_400 += 1
+
+        # Validate per the requirement
+        self.assertLess(movies_above_genre_ids_400, 7, \
+        msg="There can be only 7 movies above 400 as their sum of genre_ids")
+
+    def test_palindrome_check(self):
+        """
+        Requirements:
+        SPL-005: There is at least one movie in the database whose title has a palindrome in it.
+                 Example: "title" : "Batman: Return of the Kayak Crusaders"
+                 The title contains ‘kayak’ which is a palindrome.
+        """
+        # Declare a variable for counting palindrome occurances
+        movie_titles_with_palindrome = 0
+
+        # Iterate through each of the movie dict in the result list
+        for each_movie in self.results:
+
+            # Iterate through each word in the movie
+            for each_word_in_movie in each_movie["title"].split(" "):
+
+                # Check if it is a palindrome
+                if check_palindrome(each_word_in_movie):
+                    movie_titles_with_palindrome += 1
+
+        # Per the requirement, validate the count is atleast ONE
+        self.assertGreaterEqual(movie_titles_with_palindrome, 1, \
+        msg="There should be at least 1 movie with a palindrome string in its title")
 
 if __name__ == "__main__":
     unittest.main()
