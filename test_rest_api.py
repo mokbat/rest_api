@@ -10,18 +10,20 @@ and additional requirements.
 """
 
 # Python Standard Libraries
-import unittest
+from unittest import TestCase, main, expectedFailure
 from copy import deepcopy
 import requests
 
 # Python Addon Libraries
 from django.core.validators import URLValidator as url
 from django.core.exceptions import ValidationError
+from ddt import ddt, data, unpack
 
 # Rest API Custom Libraries
 from rest_api_functions import is_string_palindrome as check_palindrome
 
-class MoviesRestApi(unittest.TestCase):
+@ddt
+class MoviesRestApi(TestCase):
     """
     MovieRestApi module is based on Unittest.
     It has a setUp and tearDown which would
@@ -40,6 +42,7 @@ class MoviesRestApi(unittest.TestCase):
         """
         # URL for the REST API call
         self.url = "https://splunk.mocklab.io/movies?q=batman"
+        self.base_url = "https://splunk.mocklab.io/movies"
 
         self.headers = {"Accept" : "application/json"}
         self.output = requests.get(url=self.url, headers=self.headers)
@@ -56,6 +59,7 @@ class MoviesRestApi(unittest.TestCase):
         self.output = None
         self.results = None
         self.url = None
+        self.base_url = None
         self.headers = None
 
     def test_image_path_validation(self):
@@ -212,7 +216,6 @@ class MoviesRestApi(unittest.TestCase):
         self.assertLess(2, movie_count_with_substr, \
         msg="There needs to be atleast two titles which have substr")
 
-
     def test_sorting(self):
         """
         Requirements:
@@ -245,5 +248,221 @@ class MoviesRestApi(unittest.TestCase):
         # Validate the requirement order
         self.assertListEqual(required_sorted_movie_list, self.results)
 
+    def test_post_with_data(self):
+        """
+        Requirements:
+        Check the rest api implementation to see if data values affect the output.
+
+        Expected Failures:
+        When data value is None, {"name":"spiderman"}, {"description":"Return of the superhero"}
+        """
+        # Headers for POST request
+        headers = {"Content-Type":"application/json"}
+
+        # Data for POST request
+        data_value_dict = {"name":"spiderman", "description":"Return of the superhero"}
+
+        # Call the REST API
+        output = requests.post(url=self.base_url, headers=headers, data=data_value_dict)
+
+        # Validate if our POST request was Successful
+        self.assertEqual(output.status_code, 200, \
+        msg="Data value with \" {} \" does NOT work!".format(data_value_dict))
+
+    @data("None", {"name":"spiderman"},\
+    {"description":"Return of the superhero"})
+    @expectedFailure
+    def test_post_with_data_expfail(self, data_value):
+        """
+        Requirements:
+        Check the rest api implementation to see if data values affect the output.
+
+        Expected Failures:
+        When data value is None, {"name":"spiderman"}, {"description":"Return of the superhero"}
+        """
+        # Headers for POST request
+        headers = {"Content-Type":"application/json"}
+
+        # Call the REST API
+        output = requests.post(url=self.base_url, headers=headers, data=data_value)
+
+        # Validate if our POST request was Successful
+        self.assertEqual(output.status_code, 200, \
+        msg="Data value with \" {} \" does NOT work!".format(data_value))
+
+    @data("None", {"Accept":"application/json"})
+    @expectedFailure
+    def test_post_with_header_expfail(self, header_value):
+        """
+        Requirements:
+        Check the rest api implementation to see if header values affect the output.
+
+        Expected Failures:
+        When header value is None and {"Accept":"application/json"}
+        """
+        # Data for POST request
+        new_data_value = {"name":"spiderman", "description":"Return of the superhero"}
+
+        # Call the REST API
+        output = requests.post(url=self.base_url, headers=header_value, data=new_data_value)
+
+        # Validate if our POST request was Successful
+        self.assertEqual(output.status_code, 200, msg="Header value\
+            with \" {} \" does NOT work!".format(header_value))
+
+    @data({"Content-Type":"application/json"}, \
+    {"Accept":"application/json", "Content-Type":"application/json"})
+    def test_post_with_header_manip(self, header_value):
+        """
+        Requirements:
+        Check the rest api implementation to see if header values affect the output.
+
+        Expected Failures:
+        When header value is None and {"Accept":"application/json"}
+        """
+        # Data for POST request
+        new_data_value = {"name":"spiderman", "description":"Return of the superhero"}
+
+        # Call the REST API
+        output = requests.post(url=self.base_url, headers=header_value, data=new_data_value)
+
+        # Validate if our POST request was Successful
+        self.assertEqual(output.status_code, 200, msg="Header value\
+            with \" {} \" does NOT work!".format(header_value))
+
+    @data([{"name":"spiderman", "description":"Return of the superhero"},\
+    {"Content-Type":"application/json"}],\
+    [{"name":"spiderman", "description":"Return of the superhero"},\
+    {"Accept":"application/json", "Content-Type":"application/json"}])
+    @unpack
+    def test_post_with_combo_manip(self, data_value, header_value):
+        """
+        Requirements:
+        Check the rest api implementation to see if header values affect the output.
+        """
+        # Call the REST API
+        output = requests.post(url=self.base_url, headers=header_value, data=data_value)
+
+        # Validate if our POST request was Successful
+        self.assertEqual(output.status_code, 200, \
+            msg="Header value with \"{}\" and \
+            Data value with \"{}\" does NOT work!".format(header_value, data_value))
+
+    @data(["None", "None"], ["None", {"Accept":"application/json"}],\
+    ["None", {"Content-Type":"application/json"}], \
+    ["None", {"Accept":"application/json", "Content-Type":"application/json"}], \
+    [{"name":"spiderman"}, "None"], \
+    [{"name":"spiderman"}, {"Accept":"application/json"}], \
+    [{"name":"spiderman"}, {"Content-Type":"application/json"}], \
+    [{"name":"spiderman"}, {"Accept":"application/json",\
+    "Content-Type":"application/json"}], \
+    [{"name":"spiderman", "description":"Return of the superhero"}, "None"], \
+    [{"name":"spiderman", "description":"Return of the superhero"},\
+    {"Accept":"application/json"}], \
+    )
+    @unpack
+    @expectedFailure
+    def test_post_with_combo_expfail(self, data_value, header_value):
+        """
+        Requirements:
+        Check the rest api implementation to see if header values affect the output.
+
+        Expected Failures:
+        When data value is None, {"name":"spiderman"}, {"description":"Return of the superhero"}
+        When header value is None and {"Accept":"application/json"}
+        """
+        # Call the REST API
+        output = requests.post(url=self.base_url, headers=header_value, data=data_value)
+
+        # Validate if our POST request was Successful
+        self.assertEqual(output.status_code, 200, \
+            msg="Header value with \"{}\" and \
+            Data value with \"{}\" does NOT work!".format(header_value, data_value))
+
+    def test_check_new_movie(self):
+        """
+        Requirements:
+        Check the rest api implementation to see if the newly added movie is present.
+        """
+        # Use custom url
+        self.base_url = "{}?q=spiderman".format(self.base_url)
+
+        # Pass GET request headers
+        output = requests.get(url=self.base_url, headers=self.headers)
+
+        # Fetch the output json
+        results = output.json()["results"]
+
+        # Use List Comprehension to fetch a list of movie titles
+        movie_list = [each["title"] for each in results]
+
+        # Validate the addition of new movie
+        self.assertIn("spiderman", movie_list)
+
+    @data("spiderman", "batman")
+    def test_get_url_manip(self, movie):
+        """
+        Requirements:
+        Check the rest api implementation to see if
+        the output is filtered based on movie name.
+
+        Assumptions:
+        Spiderman has been added.
+
+        Expected Failures:
+        When movie is "splunk"
+        """
+        # Use custom url
+        manip_url = "{}?q={}".format(self.base_url, movie)
+
+        # Pass GET request headers
+        output = requests.get(url=manip_url, headers=self.headers)
+
+        # Validate if our POST request was Successful
+        self.assertEqual(output.status_code, 200,\
+            msg="Movie value with \"{}\" does NOT work!".format(movie))
+
+    @expectedFailure
+    def test_get_url_manip_exp_fail(self, movie="splunk"):
+        """
+        Requirements:
+        Check the rest api implementation to see if the
+        output is filtered based on movie name splunk.
+
+        Assumptions:
+        Splunk movie are not added
+        """
+        # Use custom url
+        self.base_url = "{}?q={}".format(self.base_url, movie)
+
+        # Pass GET request headers
+        output = requests.get(url=self.base_url, headers=self.headers)
+
+        # Validate if our POST request was Successful
+        self.assertEqual(output.status_code, 200, \
+            msg="Movie value with \"{}\" does NOT work!".format(movie))
+
+    @data(1, 2, 4, 8, 16)
+    def test_verify_movie_count(self, counter):
+        """
+        Requirements:
+        Check the rest api implementation to see if the output count of movies
+        is same as what we pass in the payload
+        """
+        payload = {"count" : counter}
+
+        # Pass GET request headers
+        output = requests.get(url=self.url, headers=self.headers, params=payload)
+
+        # Fetch the output json
+        results = output.json()["results"]
+
+        # Validate if our POST request was Successful
+        self.assertEqual(output.status_code, 200)
+
+        # Validate if our POST request had the exact count
+        self.assertEqual(results.__len__(), payload["count"], \
+        msg="Obs Count \"{}\" Exp Count \"{}\"".format(payload["count"], results.__len__()))
+
 if __name__ == "__main__":
-    unittest.main()
+    main()
