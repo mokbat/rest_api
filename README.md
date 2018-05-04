@@ -1,9 +1,9 @@
 # REST API TEST Module
 > This is a module which runs a set of test cases for performing rest api testing.
 
-[![GIT][git-image]]
-[![DOCKER][docker-image]]
-[![MIT][mit-license]]
+![GIT][git-image]
+![DOCKER][docker-image]
+![MIT][mit-license]
 
 [mit-license]: https://img.shields.io/github/license/mashape/apistatus.svg
 [git-image]: https://img.shields.io/github/release/qubyte/rubidium.svg
