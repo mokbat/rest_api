@@ -69,7 +69,7 @@ python3 test_rest_api.py
 
 ## Meta
 
-Your Name – Sundar Ramakrishnan – mokbat@gmail.com
+Sundar Ramakrishnan – mokbat@gmail.com
 
 Distributed under the MIT license. See ``LICENSE`` for more information.
 
